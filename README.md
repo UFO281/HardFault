@@ -5,24 +5,46 @@ Teach you how to locate HardFault and analyze its causes（教你如何定位Har
 
 ## 1. 定位HardFault产生处
 
+### 1.1 C语言版本
 >把你的void HardFault_Handler(void) 替换成下摆你这段代码，然后在hardfault处打断点，单步执行就可以找到问题原因处
 
 ```c
-/*----------------hardfault 调查原因方案，需要debug 单步执行--------------------*/
-void(*f1)(void);
-uint32_t result;
+// Return the R13(Stack Pointer)
+__ASM unsigned int __Get_SP_Value(void)
+{
+    mov r0, r13 //R13(SP)
+    bx lr
+}
+
+void (*f1)(void);
+unsigned int result;
 
 void HardFault_Handler(void)
 {
-    //实际操作Arm Coretex-M0核心的是+0x1c，M3核的是+0X14
-	result= __get_MSP()+0x1C; 
-	f1=*((uint32_t*)result);
-	f1();
-
-	while (1);
+    //实际操作Arm Coretex-M0核心的是+0x1C，M3核的是+0X14
+    result = __Get_SP_Value()+0x14;
+    f1 = *( (unsigned int*)result );
+    f1();
+    while (1);
 }
-/*----------------hardfault 调查原因方案，需要debug 单步执行--------------------*/
 ```
+>![alt text](image-5.png)
+
+---
+
+### 1.2 汇编语言版本
+```armasm
+；把你的起始.s文件内的HardFault_Handler代码换成下边这个
+
+HardFault_Handler\
+                PROC
+                add   r0, sp, #0x14     
+                ldr   r1, [r0]          
+                blx   r1                
+                B       .
+                ENDP
+```
+>![alt text](image-6.png)
 ---
 ## 2. 分析HardFault原因
 

@@ -3,10 +3,19 @@
 # HardFault 分析教程
 Teach you how to locate HardFault and analyze its causes（教你如何定位HardFault，并分析HardFault的原因）
 
-## 1. 定位HardFault产生处
+## 1. 定位HardFault产生的位置
+>**操作方法**:把你的void HardFault_Handler(void) 替换成下摆你这段代码，然后在hardfault处打断点，单步执行就可以找到问题原因处
 
-### 1.1 C语言版本
->把你的void HardFault_Handler(void) 替换成下摆你这段代码，然后在hardfault处打断点，单步执行就可以找到问题原因处
+### 1.1 先修基础知识
+>[参考文档-HardFault定位方法](https://link.zhihu.com/?target=https%3A//blog.csdn.net/m0_57249200/article/details/145891788%3Ffromshare%3Dblogdetail%26sharetype%3Dblogdetail%26sharerId%3D145891788%26sharerefer%3DPC%26sharesource%3Dm0_57249200%26sharefrom%3Dfrom_link)
+
+>![alt text](image-7.png)
+>![alt text](image-8.png)
+
+>**总结**:根据单片机进中断，寄存器压栈情况，压栈时候把LR寄存器值（存储着返回来要执行的程序地址）也压进去了，那只需要在hardfault ISR里边把LR值取出来赋值给PC就可以定位到引发hardfault的地方，如下面操作，不过这个只是定位到了引发hardfault的位置，下一步还需要结合hradfault状态寄存器分析产生的具体原因
+
+### 1.2 C语言版本
+>注意！！ 下边的MSP值+0X1C为存 LR的值，这个不同核心单片机有区别，M3核的理论上来说加0X14就可以了，但是M0核得+0x1C，实践得出来的结果
 
 ```c
 // Return the R13(Stack Pointer)
@@ -30,9 +39,9 @@ void HardFault_Handler(void)
 ```
 >![alt text](image-5.png)
 
----
+### 1.3 汇编语言版本
+>注意！！ 下边的MSP值+0X1C为存 LR的值，这个不同核心单片机有区别，M3核的理论上来说加0X14就可以了，但是M0核得+0x1C，实践得出来的结果
 
-### 1.2 汇编语言版本
 ```armasm
 ；把你的起始.s文件内的HardFault_Handler代码换成下边这个
 
@@ -45,6 +54,10 @@ HardFault_Handler\
                 ENDP
 ```
 >![alt text](image-6.png)
+
+### 1.4 操作方法
+>当产生了hardfault后，选择上述1.2或者1.3的代码方案后，debug 在hardfult处打断点执行到hardfault ISR处之后再单步执行，就可以找到出问题的地方了
+
 ---
 ## 2. 分析HardFault原因
 
